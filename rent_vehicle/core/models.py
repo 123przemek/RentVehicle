@@ -33,7 +33,6 @@ class Vehicle(models.Model):
 
 
 class Rent(models.Model):
-    TIME_MARGIN = timedelta(hours=2)
     MAX_RENT_TIME = timedelta(days=7)
     LAST_AVAILABLE_TIME = timedelta(days=90)
     started_at = models.DateTimeField()
