@@ -31,6 +31,9 @@ class Vehicle(models.Model):
     def __str__(self):
         return self.code
 
+    def for_rent(self):
+        return self.status == Vehicle.STATUS_AVAILABLE
+
 
 class Rent(models.Model):
     MAX_RENT_TIME = timedelta(days=7)

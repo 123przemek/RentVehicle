@@ -1,8 +1,9 @@
 from django.test import TestCase
 from core.models import Vehicle, User, Rent
-from core.core import rent_vehicle
+from core.core import rent_vehicle, CollisionError
 from django.utils import timezone
 from datetime import timedelta
+
 
 NOW = timezone.now()
 HOUR = timedelta(hours=1)
@@ -48,11 +49,21 @@ class UserRentLimitTest(TestCase):
     def test_collision(self):
         rent = rent_vehicle(self.v1, self.u1, start_time=NOW+DAY*3, end_time=NOW+DAY*6)
         # z przodu
-        self.assertRaises(ValueError, rent_vehicle, self.v1, self.u1,
+        self.assertRaises(CollisionError, rent_vehicle, self.v1, self.u1,
                           start_time=NOW + DAY * 2, end_time=NOW + DAY * 5)
         #z tylu
+        self.assertRaises(CollisionError, rent_vehicle, self.v1, self.u1,
+                          start_time=NOW + DAY * 4, end_time=NOW + DAY * 9)
         #w srodku
+        self.assertRaises(CollisionError, rent_vehicle, self.v1, self.u1,
+                          start_time=NOW + DAY * 4, end_time=NOW + DAY * 5)
         #otacza calosc
+        self.assertRaises(CollisionError, rent_vehicle, self.v1, self.u1,
+                          start_time=NOW + DAY * 2, end_time=NOW + DAY * 7)
 
-    #time_margin
-    #status pojazdu ma znaczenie
+    def test_status_not_available(self):
+        self.v1.status = Vehicle.STATUS_BROKE_DOWN
+        self.v1.save()
+
+        self.assertRaises(ValueError, rent_vehicle, self.v1, self.u1,
+                          start_time=NOW + DAY * 2, end_time=NOW + DAY * 7)
