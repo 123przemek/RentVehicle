@@ -1,14 +1,13 @@
 from django.test import TestCase
 from core.models import Vehicle, User, Rent
-from core.core import rent_vehicle, CollisionError
+from core.core import rent_vehicle, CollisionError, StatusError
 from django.utils import timezone
 from datetime import timedelta
-
 
 NOW = timezone.now()
 HOUR = timedelta(hours=1)
 DAY = timedelta(days=1)
-# Create your tests here.
+
 
 class UserRentLimitTest(TestCase):
     def setUp(self):
@@ -20,6 +19,13 @@ class UserRentLimitTest(TestCase):
     def test_success_no_collision(self):
         rent = rent_vehicle(self.v1, self.u1, start_time=NOW+HOUR*4, end_time=NOW+HOUR*5)
         self.assertIsNotNone(rent)
+
+    def test_success_multiple_rent_no_collision(self):
+        self.assertTrue(NOW + HOUR *8 < NOW + DAY * 2)
+        rent = rent_vehicle(self.v1, self.u1, start_time=NOW + HOUR, end_time=NOW + HOUR *8)
+        rent2 = rent_vehicle(self.v1, self.u1, start_time=NOW + DAY * 2, end_time=NOW + DAY * 2 + HOUR * 3)
+        self.assertIsNotNone(rent)
+        self.assertIsNotNone(rent2)
 
     def test_past_date(self):
         self.assertRaises(ValueError, rent_vehicle, self.v1, self.u1,
@@ -65,5 +71,5 @@ class UserRentLimitTest(TestCase):
         self.v1.status = Vehicle.STATUS_BROKE_DOWN
         self.v1.save()
 
-        self.assertRaises(ValueError, rent_vehicle, self.v1, self.u1,
+        self.assertRaises(StatusError, rent_vehicle, self.v1, self.u1,
                           start_time=NOW + DAY * 2, end_time=NOW + DAY * 7)

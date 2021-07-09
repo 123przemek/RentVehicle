@@ -1,12 +1,13 @@
 from core.models import Rent, Vehicle
 from django.utils import timezone
 from django.db import transaction
-import time
 
-
-# blad jest klasa ktora dziedziczy po wyjatku
 
 class CollisionError(Exception):
+    pass
+
+
+class StatusError(Exception):
     pass
 
 
@@ -21,54 +22,30 @@ def rent_vehicle(vehicle, user, start_time, end_time):
     elif end_time > now + Rent.LAST_AVAILABLE_TIME:
         raise ValueError("end date out of range")
 
-    # transakcja dziala wg zasady: wszystko albo nic
-    # w ramach transakcji mozna zalozyc blokade na dany zasob w obrebie calego systemu
     with transaction.atomic():
-        # select_for_update zaklada blokade na zasob
         vehicle = Vehicle.objects.select_for_update().get(id=vehicle.id)
-        print('zaczynamy rezerwację')
-        time.sleep(10)
-        # if vehicle.status != Vehicle.STATUS_AVAILABLE:
-        #     raise ValueError("vehicle is not available")
-        if not vehicle.for_rent():
-            raise ValueError("vehicle is not available")
 
-        # szukamy wypozyczen nachodzacych na nasz czas
+        if not vehicle.for_rent():
+            raise StatusError("The vehicle is not available./"
+                              "It's either broken down or has been already booked.")
+
         base_query = Rent.objects.filter(returned_at__isnull=True, vehicle=vehicle)
         is_collision = (
                 (base_query
+                 # db.started_at < end_time and db.finished_at > end_time
                  .filter(started_at__lt=end_time, finished_at__gt=end_time)
                  .exists()) or
                 (base_query
-                 .filter(started_at__lt=start_time, finished_at__lt=end_time)
+                 # db.started_at < start_time and db.finished_at < end_time
+                 .filter(started_at__lte=start_time, finished_at__gt=start_time)
                  .exists()) or
                 (base_query
-                 .filter(started_at__gt=start_time, finished_at__lt=end_time)
+                 # db.started_at > start_time and db.finished_at < end_time
+                 .filter(started_at__gte=start_time, finished_at__lt=end_time)
                  .exists())
         )
         if is_collision:
             raise CollisionError("time collision")
-        # is_right_collision = (
-        #     base_query
-        #         .filter(started_at__lt=end_time, finished_at__gt=end_time)
-        #         .exists())
-        # if is_right_collision:
-        #     raise CollisionError("time collision")
-        #
-        # is_left_collision = (
-        #     base_query
-        #         .filter(started_at__lt=start_time, finished_at__lt=end_time)
-        #         .exists())
-        # if is_left_collision:
-        #     raise CollisionError("time collision")
-        #
-        # is_container_collision = (
-        #     base_query
-        #         .filter(started_at__gt=start_time, finished_at__lt=end_time)
-        #         .exists())
-        # if is_container_collision:
-        #     raise CollisionError("time collision")
 
-        # blokada sie konczy w momencie opuszczania 'with' czyli w tym wypadku przy 'return'
         return Rent.objects.create(started_at=start_time, finished_at=end_time,
                                    user=user, vehicle=vehicle)
