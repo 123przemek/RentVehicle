@@ -16,6 +16,8 @@ class Vehicle(models.Model):
         (KIND_ELECTRIC_SCOOTER, 'electric scooter')
     ]
 
+    KIND_NAME_DICT = dict(KIND_CHOICES)
+
     STATUS_AVAILABLE = 'AV'
     STATUS_BROKE_DOWN = 'BD'
     STATUS_CHOICES = [
@@ -29,7 +31,7 @@ class Vehicle(models.Model):
     status = models.CharField(max_length=3, choices=STATUS_CHOICES)
 
     def __str__(self):
-        return self.code
+        return "{} ({})".format(self.code, self.get_kind_display())
 
     def for_rent(self):
         return self.status == Vehicle.STATUS_AVAILABLE
@@ -38,8 +40,8 @@ class Vehicle(models.Model):
 class Rent(models.Model):
     MAX_RENT_TIME = timedelta(days=7)
     LAST_AVAILABLE_TIME = timedelta(days=90)
-    started_at = models.DateTimeField()
-    finished_at = models.DateTimeField()
+    started_at = models.DateTimeField(help_text="DD/MM/YYYY hh:mm")
+    finished_at = models.DateTimeField(help_text="DD/MM/YYYY hh:mm")
     returned_at = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.RESTRICT)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.RESTRICT)

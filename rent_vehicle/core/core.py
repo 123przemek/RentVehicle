@@ -14,9 +14,9 @@ class StatusError(Exception):
 def rent_vehicle(vehicle, user, start_time, end_time):
     now = timezone.now()
     if start_time < now or end_time <= now:
-        raise ValueError("required current or future time")
+        raise ValueError("current or future time is required")
     elif start_time >= end_time:
-        raise ValueError("end_time must be greater than start_time")
+        raise ValueError("end time must be greater than start time")
     elif end_time - start_time > Rent.MAX_RENT_TIME:
         raise ValueError("too long rent time")
     elif end_time > now + Rent.LAST_AVAILABLE_TIME:

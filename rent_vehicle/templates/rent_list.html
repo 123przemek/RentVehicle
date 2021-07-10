@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Your existing rents{% endblock %}
+
+{% block content %}
+    <h1>Your existing rents</h1>
+    {% if groups %}
+        {% for group_name, group in groups.items %}
+            <h3>{{ group_name }}</h3>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">vehicle</th>
+                    <th scope="col">start</th>
+                    <th scope="col">finish</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for rent in group %}
+                        <tr>
+                            <th scope="row">{{ forloop.counter }}</th>
+                            <td>{{ rent.vehicle.code }}</td>
+                            <td>{{ rent.started_at }}</td>
+                            <td>{{ rent.finished_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-primary">You have no existing rents</div>
+    {% endif %}
+    <a href="{% url "rent" %}" class="btn btn-info">RENT</a>
+{% endblock %}

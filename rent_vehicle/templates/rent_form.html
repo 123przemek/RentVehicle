@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load bootstrap4 %}
+
+{% block content %}
+    <div class="row">
+        <div class="col">
+        </div>
+        <div class="col-4">
+            <h1>Booking form</h1>
+            <form method="POST">
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                {% buttons %}
+                    <div class="clearfix">
+                        <button class="btn btn-success float-left">Rent</button>
+                        <a href="{% url 'rent_list' %}" class="btn btn-secondary float-right">Back</a></div>
+                {% endbuttons %}
+            </form>
+        </div>
+        <div class="col">
+        </div>
+    </div>
+{% endblock %}
